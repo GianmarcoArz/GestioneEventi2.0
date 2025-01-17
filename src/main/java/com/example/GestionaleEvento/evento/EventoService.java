@@ -26,6 +26,10 @@ public class EventoService {
 
     private final AppUserRepository appUserRepository;
 
+    public List<Evento> getAllEventi() {
+        return eventoRepository.findAll();
+    }
+
 
     private AppUser getLoggedInUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -33,12 +37,6 @@ public class EventoService {
                 .orElseThrow(() -> new RuntimeException("Utente non trovato"));
     }
 
-//    public Evento creaEvento(EventoDTO eventoDTO) {
-//        Evento evento = new Evento();
-//        BeanUtils.copyProperties(eventoDTO, evento);
-//        evento.setDate(LocalDate.now());
-//        return eventoRepository.save(evento);
-//    }
 
     public Evento creaEvento(EventoDTO eventoDTO) {
         Evento evento = new Evento();

@@ -20,6 +20,13 @@ public class EventoController {
     @Autowired
     private final EventoService eventoService;
 
+
+    @GetMapping
+    public ResponseEntity<List<Evento>> getAllEventi() {
+        List<Evento> eventi = eventoService.getAllEventi();
+        return new ResponseEntity<>(eventi, HttpStatus.OK);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ORGANIZER') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<Evento> creaEvento(@RequestBody EventoDTO eventoDTO) {

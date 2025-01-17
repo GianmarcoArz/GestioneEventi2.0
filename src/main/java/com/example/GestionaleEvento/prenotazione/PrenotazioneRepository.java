@@ -7,4 +7,5 @@ import java.util.List;
 
 
 public interface PrenotazioneRepository extends JpaRepository<Prenotazione, Long> {
+    List<Prenotazione> findByUtente(AppUser utente);
 }
