@@ -4,7 +4,7 @@ import com.example.GestionaleEvento.auth.AppUser;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "eventi")
@@ -22,7 +22,7 @@ public class Evento {
     private String descrizione;
 
     @Column(nullable = false)
-    private LocalDateTime date;
+    private LocalDate date;
 
     @Column(nullable = false)
     private String luogo;

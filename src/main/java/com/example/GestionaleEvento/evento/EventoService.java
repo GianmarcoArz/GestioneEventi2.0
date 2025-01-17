@@ -1,70 +1,83 @@
 package com.example.GestionaleEvento.evento;
 
 import com.example.GestionaleEvento.auth.AppUser;
+import com.example.GestionaleEvento.auth.AppUserRepository;
+import com.example.GestionaleEvento.auth.AppUserService;
 import com.example.GestionaleEvento.prenotazione.Prenotazione;
 import com.example.GestionaleEvento.prenotazione.PrenotazioneRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class EventoService {
 
-    @Autowired
-    private final EventoRepository eventoRepository;
 
-    @Autowired
-    private final PrenotazioneRepository prenotazioneRepository;
+    private final   EventoRepository eventoRepository;
 
-    public Evento createEvento(Evento evento, AppUser organizzatore) {
+    private final AppUserRepository appUserRepository;
+
+
+    private AppUser getLoggedInUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utente non trovato"));
+    }
+
+//    public Evento creaEvento(EventoDTO eventoDTO) {
+//        Evento evento = new Evento();
+//        BeanUtils.copyProperties(eventoDTO, evento);
+//        evento.setDate(LocalDate.now());
+//        return eventoRepository.save(evento);
+//    }
+
+    public Evento creaEvento(EventoDTO eventoDTO) {
+        Evento evento = new Evento();
+        BeanUtils.copyProperties(eventoDTO, evento);
+
+        AppUser organizzatore = appUserRepository.findById(eventoDTO.getOrganizzatoreId())
+                .orElseThrow(() -> new EntityNotFoundException("Organizzatore non trovato"));
+
         evento.setOrganizzatore(organizzatore);
+        evento.setDate(LocalDate.now());
         return eventoRepository.save(evento);
     }
 
-    public Evento updateEvento(Long eventoId, Evento eventoDetails) {
-        Evento evento = eventoRepository.findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento non trovato con id: " + eventoId));
+    public Evento modificaEvento(Long id, EventoDTO eventoDTO) {
+        Evento evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento non trovato"));
 
-        evento.setTitolo(eventoDetails.getTitolo());
-        evento.setDescrizione(eventoDetails.getDescrizione());
-        evento.setDate(eventoDetails.getDate());
-        evento.setLuogo(eventoDetails.getLuogo());
-        evento.setPostiDisponibili(eventoDetails.getPostiDisponibili());
-
-        return eventoRepository.save(evento);
-    }
-
-    public void deleteEvento(Long eventoId) {
-        Evento evento = eventoRepository.findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento non trovato con id: " + eventoId));
-        eventoRepository.delete(evento);
-    }
-
-    public List<Evento> getAllEventi() {
-        return eventoRepository.findAll();
-    }
-
-    public Evento getEventoById(Long eventoId) {
-        return eventoRepository.findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento non trovato con id: " + eventoId));
-    }
-
-    public Prenotazione listaPartecipanti(Long eventoId, AppUser user) {
-        Evento evento = eventoRepository.findById(eventoId)
-                .orElseThrow(() -> new RuntimeException("Evento non trovato con id: " + eventoId));
-
-        if (evento.getPostiDisponibili() <= 0) {
-            throw new IllegalStateException("Mi dispiace, non ci sono più posti disponibili per questo evento");
+        AppUser loggedInUser = getLoggedInUser();
+        if (!evento.getOrganizzatore().getId().equals(loggedInUser.getId())) {
+            throw new AccessDeniedException("Non sei autorizzato a modificare questo evento");
         }
 
-        Prenotazione prenotazione = new Prenotazione();
-        prenotazione.setEvento(evento);
-        prenotazione.setUtente(user);
-        evento.setPostiDisponibili(evento.getPostiDisponibili() - 1);
-        eventoRepository.save(evento);
-        return prenotazioneRepository.save(prenotazione);
+        BeanUtils.copyProperties(eventoDTO, evento);
+        evento.setOrganizzatore(loggedInUser);
+        return eventoRepository.save(evento);
     }
+
+    public Evento cancellaEvento(Long id) {
+        Evento evento = eventoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evento non trovato"));
+
+        AppUser loggedInUser = getLoggedInUser();
+        if (!evento.getOrganizzatore().getId().equals(loggedInUser.getId())) {
+            throw new AccessDeniedException("Non sei autorizzato a cancellare questo evento");
+        }
+
+        eventoRepository.delete(evento);
+        return evento;
+    }
+
+
 }

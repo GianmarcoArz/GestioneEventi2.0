@@ -14,17 +14,5 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PrenotazioneController {
 
-    @Autowired
-    private final PrenotazioneService prenotazioneService;
 
-    @GetMapping
-    public ResponseEntity<List<Prenotazione>> getPrenotazioniByUser(@AuthenticationPrincipal AppUser user) {
-        return ResponseEntity.ok(prenotazioneService.getPrenotazioniByUser(user));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelPrenotazione(@PathVariable Long id, @AuthenticationPrincipal AppUser user) {
-        prenotazioneService.cancelPrenotazione(id, user);
-        return ResponseEntity.noContent().build();
-    }
 }
